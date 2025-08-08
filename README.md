@@ -1,7 +1,3 @@
-# SavannahTankVision
-Built with CNNs, kNN, and traditional ML to classify thousands of industrial tank images into full vs. detail shots. Streamlines photo archiving and sets the stage for searchable image databases.
-# SavannahTankVision
-
 **Classify. Archive. Organize.**  
 Built for real-world speed, SavannahTankVision uses CNNs, kNN, and traditional ML to automatically classify thousands of industrial tank photos into full-tank or detail shots — cutting manual cleanup time and enabling searchable archives for engineering, QA, and marketing use cases.
 
