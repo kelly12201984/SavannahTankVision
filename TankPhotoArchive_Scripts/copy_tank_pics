@@ -1,0 +1,59 @@
+from pathlib import Path
+
+# === CONFIG ===
+ROOT_DIR = Path(r"P:\JOBS")
+TARGET_YEARS = ['2019', '2020', '2021', '2022', '2023', '2024', '2025']
+SHIPPING_KEYWORDS = ['shipping', 'vessel shipping']
+IMAGE_EXTS = ['.jpg', '.jpeg']
+
+# === STATS ===
+job_count = 0
+with_photos = 0
+with_shipping_photos = 0
+candidate_images = []
+
+for year in TARGET_YEARS:
+    year_path = ROOT_DIR / year
+    if not year_path.exists():
+        continue
+
+    for job_folder in year_path.iterdir():
+        if not job_folder.is_dir():
+            continue
+
+        job_count += 1
+        found_photos = False
+        found_shipping = False
+
+        for pic_folder_name in ['Pictures', 'Photos']:
+            pic_path = job_folder / pic_folder_name
+            if not pic_path.exists():
+                continue
+
+            found_photos = True
+
+            # Check subfolders with shipping keywords
+            for sub in pic_path.rglob('*'):
+                if sub.is_dir() and any(kw in sub.name.lower() for kw in SHIPPING_KEYWORDS):
+                    found_shipping = True
+                    for file in sub.glob("*"):
+                        if file.suffix.lower() in IMAGE_EXTS:
+                            candidate_images.append(file)
+
+            # Also check if any image directly in folder has shipping keyword
+            for file in pic_path.glob("*"):
+                if file.is_file() and file.suffix.lower() in IMAGE_EXTS:
+                    if any(kw in file.name.lower() for kw in SHIPPING_KEYWORDS):
+                        found_shipping = True
+                        candidate_images.append(file)
+
+        if found_photos:
+            with_photos += 1
+        if found_shipping:
+            with_shipping_photos += 1
+
+# === SUMMARY OUTPUT ===
+print("📦 Total job folders scanned:", job_count)
+print("🖼️  Jobs with photo folders:  ", with_photos)
+print("🚢 Jobs with shipping pics:  ", with_shipping_photos)
+print("🧾 Total images found:       ", len(candidate_images))

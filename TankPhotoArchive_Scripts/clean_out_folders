@@ -1,0 +1,24 @@
+import os
+from pathlib import Path
+
+# Base path to dry_run_archive
+ARCHIVE_DIR = Path(r"P:\TankPhotoArchive\dry_run_archive")
+YEARS_TO_CLEAN = ['2019', '2020', '2021', '2022', '2023', '2024', '2025']
+
+deleted_count = 0
+
+for year in YEARS_TO_CLEAN:
+    folder = ARCHIVE_DIR / year
+    if folder.exists():
+        for file in folder.glob("*"):
+            if file.is_file():
+                try:
+                    file.unlink()
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"❌ Failed to delete {file.name}: {e}")
+        print(f"✅ Cleaned folder: {folder}")
+    else:
+        print(f"⚠️ Skipped missing folder: {folder}")
+
+print(f"\n🧹 Total files deleted: {deleted_count}")

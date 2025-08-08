@@ -1,0 +1,114 @@
+# Photo Archive Builder Script for Savannah Tank
+# ---------------------------------------------------
+# Author: Kelly Kells (Data Scientist / Internal Workflow Engineer)
+# Purpose: Recursively crawl the P: drive job folders, find shipping photo folders,
+# identify full-tank images, and archive them into a new organized folder (without deleting originals)
+
+import os
+import shutil 
+from shutil import copy2
+from pathlib import Path
+from datetime import datetime
+
+# ------------------------------------
+# SECTION 1: CONFIGURATION & SETUP
+# ------------------------------------
+ROOT_JOB_DIR = Path("P:/Jobs")  # <-- Change later with real path
+ARCHIVE_DIR = Path("P:/FullTank_Archive")  # Destination archive folder
+LOG_FILE = Path("P:/PhotoArchive_log.txt")
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+
+# Create archive dir if it doesn't exist
+ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+
+# ------------------------------------
+# SECTION 2: LOGGING & COUNTS
+# ------------------------------------
+job_folder_count = 0
+shipping_folder_count = 0
+pictures_folder_count = 0
+total_images_found = 0
+
+# Dictionary to log jobs missing expected folders
+folder_issues = {
+    "missing_shipping": [],
+    "missing_pictures": []
+}
+
+# Log list of archived images
+archived_images = []
+
+# ------------------------------------
+# SECTION 3: DIRECTORY CRAWL & COPY
+# ------------------------------------
+for job_folder in ROOT_JOB_DIR.iterdir():
+    if not job_folder.is_dir():
+        continue
+    job_folder_count += 1
+
+    # Try to find a folder inside that contains 'shipping'
+    shipping_folder = None
+    for subfolder in job_folder.glob("**/*"):
+        if subfolder.is_dir() and "shipping" in subfolder.name.lower():
+            shipping_folder = subfolder
+            break
+
+    if not shipping_folder:
+        folder_issues["missing_shipping"].append(job_folder.name)
+        continue
+    shipping_folder_count += 1
+
+    # Try to find a folder inside shipping that contains 'pic' or 'image'
+    picture_folder = None
+    for subfolder in shipping_folder.iterdir():
+        if subfolder.is_dir() and ("pic" in subfolder.name.lower() or "image" in subfolder.name.lower()):
+            picture_folder = subfolder
+            break
+
+    if not picture_folder:
+        folder_issues["missing_pictures"].append(job_folder.name)
+        continue
+    pictures_folder_count += 1
+
+    # Copy full image files to archive (for now: copy all images)
+    for file in picture_folder.glob("*"):
+        if file.suffix.lower() in ALLOWED_EXTENSIONS:
+            total_images_found += 1
+            new_filename = f"{job_folder.name}_{file.name}"
+            dest_path = ARCHIVE_DIR / new_filename
+            shutil.copy2(file, dest_path)
+            archived_images.append(str(dest_path))
+
+# ------------------------------------
+# SECTION 4: FINAL REPORTING
+# ------------------------------------
+summary = [
+    f"Photo Archive Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    f"-------------------------------------------",
+    f"Total Job Folders Scanned: {job_folder_count}",
+    f"Shipping Folders Found: {shipping_folder_count}",
+    f"Picture Folders Found: {pictures_folder_count}",
+    f"Total Images Archived: {len(archived_images)}",
+    f"Jobs Missing Shipping Folder: {len(folder_issues['missing_shipping'])}",
+    f"Jobs Missing Picture Folder: {len(folder_issues['missing_pictures'])}",
+    f"Log File Location: {LOG_FILE}",
+    ""
+]
+
+# Write summary + image list to log
+with open(LOG_FILE, 'w') as f:
+    f.write("\n".join(summary))
+    f.write("\n\nArchived Files:\n")
+    for img in archived_images:
+        f.write(img + "\n")
+
+    f.write("\nJobs Missing Shipping Folder:\n")
+    for job in folder_issues['missing_shipping']:
+        f.write(job + "\n")
+
+    f.write("\nJobs Missing Picture Folder:\n")
+    for job in folder_issues['missing_pictures']:
+        f.write(job + "\n")
+
+print("✅ Photo archive task completed.")
+print("📄 Summary written to log.")

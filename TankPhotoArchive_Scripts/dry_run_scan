@@ -1,0 +1,124 @@
+import os
+from pathlib import Path
+from datetime import datetime
+from shutil import copy2
+# === SECTION 1: SETUP ===
+LOG_PATH = Path.cwd() / "log_dry_run.txt"
+
+ROOTS_AND_YEARS = {
+    Path(r"P:\ARCHIVES\OLD JOBS"): ['2019'],
+    Path(r"P:\JOBS"): ['2020', '2021', '2022', '2023', '2024', '2025']
+}
+
+PHOTO_FOLDER_NAMES = ['pictures', 'photos']  # folders to check first
+SHIPPING_KEYWORDS = ['shipping']  # must appear in folder or filename
+IMAGE_EXTENSIONS = ['.jpg', '.jpeg']  # limit to JPGs only
+
+# === SECTION 2: LOGGING ===
+def log(msg):
+    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    with open(LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(f"{timestamp} {msg}\n")
+    print(f"{timestamp} {msg}")
+
+log("=== SHIPPING PHOTO DRY RUN STARTED ===")
+
+# === SECTION 3: SCAN JOB FOLDERS ===
+job_count = 0
+with_shipping_photos = 0
+shipping_photo_candidates = []
+
+for root_path, years in ROOTS_AND_YEARS.items():
+    for year in years:
+        year_path = root_path / year
+        if not year_path.exists():
+            log(f"Year folder not found: {year_path}")
+            continue
+
+        try:
+            for job_folder in year_path.iterdir():
+                if not job_folder.is_dir():
+                    continue
+
+                job_count += 1
+                shipping_photos_found = False
+
+                # --- Step 1: Look for a "pictures" or "photos" folder ---
+                picture_dir = None
+                for sub in job_folder.iterdir():
+                    if sub.is_dir() and sub.name.lower() in PHOTO_FOLDER_NAMES:
+                        picture_dir = sub
+                        break
+
+                # --- Step 2: If we found a pictures/photos folder ---
+                if picture_dir:
+                    for sub in picture_dir.iterdir():
+                        if sub.is_dir() and any("shipping" in sub.name.lower() for _ in [1]):
+                            for file in sub.iterdir():
+                                if file.is_file() and file.suffix.lower() in IMAGE_EXTENSIONS:
+                                    shipping_photo_candidates.append(file)
+                                    shipping_photos_found = True
+
+                # --- Step 3: If no pictures/photos folder found ---
+                if not picture_dir:
+                    for sub in job_folder.iterdir():
+                        if sub.is_dir() and "shipping" in sub.name.lower():
+                            for file in sub.iterdir():
+                                if file.is_file() and file.suffix.lower() in IMAGE_EXTENSIONS:
+                                    shipping_photo_candidates.append(file)
+                                    shipping_photos_found = True
+
+                    # Also look for JPGs with "shipping" in name at root of job folder
+                    for file in job_folder.iterdir():
+                        if file.is_file() and file.suffix.lower() in IMAGE_EXTENSIONS:
+                            if "shipping" in file.name.lower():
+                                shipping_photo_candidates.append(file)
+                                shipping_photos_found = True
+
+                if shipping_photos_found:
+                    with_shipping_photos += 1
+
+                log(f"[{year}] {job_folder.name} — Shipping Pics: {shipping_photos_found}")
+
+        except Exception as e:
+            log(f"❌ ERROR in folder {year_path}: {e}")
+
+# === SECTION 4: SUMMARY ===
+log("=== DRY RUN COMPLETE ===")
+log(f"Total job folders scanned: {job_count}")
+log(f"Jobs with shipping photos: {with_shipping_photos}")
+log(f"Total shipping image candidates: {len(shipping_photo_candidates)}")
+# === SECTION 5: COPY IMAGES TO ARCHIVE ===
+from shutil import copy2
+
+DEST_ROOT = Path(r"P:\TankPhotoArchive\dry_run_archive")
+
+log("=== BEGIN COPYING SHIPPING PHOTOS ===")
+copy_count = 0
+error_count = 0
+
+for img_path in shipping_photo_candidates:
+    try:
+        # Extract job folder name and year
+        job_folder = img_path.parents[2].name  # ex: '009-19 SFC Something'
+        year = img_path.parts[2]  # '2019', '2020', etc. from 'P:\JOBS\2020\...'
+
+        # Build destination path
+        dest_dir = DEST_ROOT / year
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        new_filename = f"{job_folder}_{img_path.name}"
+        dest_path = dest_dir / new_filename
+
+        # Copy with overwrite
+        copy2(img_path, dest_path)
+        log(f"[COPIED] {new_filename} → {year} archive")
+        copy_count += 1
+
+    except Exception as e:
+        log(f"❌ COPY ERROR: {img_path} → {e}")
+        error_count += 1
+
+log("=== COPY COMPLETE ===")
+log(f"Total copied: {copy_count}")
+log(f"Errors: {error_count}")
