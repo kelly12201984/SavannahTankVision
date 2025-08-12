@@ -1,85 +1,32 @@
-**Classify. Archive. Organize.**  
-Built for real-world speed, SavannahTankVision uses CNNs, kNN, and traditional ML to automatically classify thousands of industrial tank photos into full-tank or detail shots — cutting manual cleanup time and enabling searchable archives for engineering, QA, and marketing use cases.
+# SavTankVision
+AI-powered photo archive classifier for tank manufacturing job folders.
+
+> **TL;DR**: Crawls `P:\JOBS\<YEAR>\<JOB-ID>\Pictures\Shipping`, classifies photos, and **copies only full-tank images** into a central archive. Originals stay untouched. Re-run safe via manifest + content-hash dedupe. Designed for weekly automation on Windows.
 
 ---
 
-## 🔧 Tech Stack
+## ✨ What it does
+- **Finds photos** in nested job folders (case-insensitive `Pictures/Shipping`)
+- **Classifies** images (CNN; label `1 = full_tank`, `0 = other`)
+- **Copies only full-tank** images to the archive (no deletes/moves)
+- **Preserves provenance** in filenames: `JOBID__ORIGNAME__HASH.ext`
+- **Idempotent**: content-hash manifest avoids duplicates and rework
+- **Logs everything** for audit; optional email summary + HTML “last run” report
+- **Weekly scheduled** run via Windows Task Scheduler (no manual steps)
 
-- **Python** (OpenCV, NumPy, scikit-learn, PyTorch)
-- **Machine Learning**:  
-  - `k-Nearest Neighbors` for baseline classification  
-  - `Convolutional Neural Networks (CNN)` for advanced accuracy
-- **Computer Vision**: Color histograms, HSV space
-- **Tools**: Streamlit-ready, P-drive integration, Visual Studio Code, Windows/Remote-friendly
+## 🧱 Stack
+- **Python 3.10+**
+- **PyTorch / torchvision** (ResNet18 fine-tune)
+- **Pillow** (robust image loading + EXIF fix)
+- **pandas** (manifest/logs)
+- *(Legacy baseline: OpenCV + scikit-learn kNN — kept for the record)*
 
----
-
-## 🧠 What It Does
-
-- Loads labeled training images (full tanks vs. detail shots)
-- Extracts image features (color histograms or CNN embeddings)
-- Trains a classifier (kNN or CNN-based)
-- Scans tank job folders on Savannah Tank's network drive
-- Automatically sorts photos into proper folders:
-  - `full_tanks/`
-  - `detail_shots/`
-
-Optional debug mode available for misclassified previews during tuning.
-
----
-
-## 📁 Project Structure
-
-TankPhotoArchive/
-├── training_sets/
-│ ├── full_tanks_train/
-│ └── detail_shots_train/
-├── classified/
-│ ├── full_tanks/
-│ └── detail_shots/
-├── TankPhotoArchive_Scripts/
-│ ├── classify_tank_photos_knn.py
-│ ├── classify_tank_photos_ai.py
-│ ├── AI_Training_Script.py
-│ └── requirements_CV.txt
-
+## 📈 Impact
+- Processed **~15,000 photos** across **823 jobs (2019–2025)**
+- Centralized, searchable “full-tank” archive
+- Retrieval time dropped from **hours to minutes**
+- Zero risk to originals (copy-only workflow)
 
 ---
 
-## 🚀 How To Use
-
-### 🧠 Train the Model
-1. Place labeled images in `training_sets/full_tanks_train/` and `training_sets/detail_shots_train/`.
-2. Run `AI_Training_Script.py` to train your CNN or `train_knn.py` for a lightweight model.
-3. A `.pkl` model file will be saved for later use.
-
-### 📷 Classify Images
-1. Run `classify_tank_photos_ai.py` or `classify_tank_photos_knn.py`.
-2. Select the year/folder to process.
-3. Model will classify and move images into `classified/full_tanks/` or `classified/detail_shots/`.
-
----
-
-## ✅ Why It Matters
-
-This app was built for Savannah Tank & Equipment Corp to streamline internal image organization across tens of thousands of archived tank photos. What used to be a tedious manual task can now be done in minutes — freeing up engineering and marketing time and laying the groundwork for future image search and content reuse.
-
----
-
-## 🧠 Future Plans
-
-- Add Streamlit interface for ease of use
-- Tag detection (e.g., cone bottom, half-pipe, ladder)
-- Connect to searchable metadata/image database
-
----
-
-## 👩‍💻 Author
-
-Kelly Arseneau  
-[Portfolio](https://sites.google.com/view/kelly-ds-portfolio?usp=sharing) | [GitHub](https://github.com/kelly12201984) | [LinkedIn](https://www.linkedin.com/in/kelly-arseneau-9459b1273/)
-
----
-
-> “Don’t organize your chaos — eliminate it.”  
-> — SavannahTankVision
+## 📂 Paths & assumptions
