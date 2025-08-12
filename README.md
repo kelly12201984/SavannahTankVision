@@ -29,4 +29,18 @@ AI-powered photo archive classifier for tank manufacturing job folders.
 
 ---
 
-## 📂 Paths & assumptions
+- Folder names are **case-insensitive** (`pictures` vs `Pictures`, `shipping` vs `Shipping`).
+- `<JOB-ID>` matches `###-##` (e.g., `038-19`) and is embedded in the destination filename.
+
+---
+
+## 🚀 Quickstart
+
+1) **Create env & install**
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install torch torchvision pillow pandas
+# optional (legacy & extras)
+pip install opencv-python scikit-learn
+
